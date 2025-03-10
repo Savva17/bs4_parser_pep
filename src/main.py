@@ -1,3 +1,4 @@
+import csv
 import logging
 import re
 from urllib.parse import urljoin
@@ -131,17 +132,20 @@ def pep(session):
         status = find_tag(dl, 'dd', attrs={'class': 'field-even'})
         if status:
             status_text = status.text.strip()
-            matched = False
             for key, values in EXPECTED_STATUS.items():
                 if status_text in values:
                     if values[0] not in count_for_status:
                         count_for_status[values[0]] = 0
                     count_for_status[values[0]] += 1
-                    matched = True
                     break
 
     count_for_status['Total'] = total
 
+    with open('results/pep.csv', 'w', encoding='utf-8') as file:
+        result = csv.writer(file)
+        result.writerow(['Статус', 'Количество'])
+        for status, count in count_for_status.items():
+            result.writerow([status, count])
     return results
 
 

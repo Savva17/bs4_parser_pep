@@ -103,13 +103,8 @@ def download(session):
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
-def pep(session):
+def pep_links(category):
 
-    response = get_response(session, PEP_DOC_URL)
-    if response is None:
-        return
-    soup = BeautifulSoup(response.text, 'lxml')
-    category = find_tag(soup, 'section', attrs={'id': 'index-by-category'})
     total = 0
     results = []
     for table in category.find_all('table'):
@@ -120,6 +115,28 @@ def pep(session):
                 full_url = urljoin(PEP_DOC_URL, href)
                 results.append(full_url)
                 total += 1
+
+    return results, total
+
+
+def pep(session):
+
+    response = get_response(session, PEP_DOC_URL)
+    if response is None:
+        return
+    soup = BeautifulSoup(response.text, 'lxml')
+    category = find_tag(soup, 'section', attrs={'id': 'index-by-category'})
+    results, total = pep_links(category)
+    # total = 0
+    # results = []
+    # for table in category.find_all('table'):
+    #     for rows in table.find_all('tr')[1:]:
+    #         a_href = find_tag(rows, 'a')
+    #         if a_href:
+    #             href = a_href.get('href')
+    #             full_url = urljoin(PEP_DOC_URL, href)
+    #             results.append(full_url)
+    #             total += 1
 
     count_for_status = {}
     for page in tqdm(results):

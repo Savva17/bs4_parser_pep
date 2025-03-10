@@ -1,4 +1,3 @@
-import csv
 import logging
 import re
 from urllib.parse import urljoin
@@ -110,9 +109,9 @@ def pep(session):
     if response is None:
         return
     soup = BeautifulSoup(response.text, 'lxml')
-    category = find_tag(soup, id='index-by-category')
+    category = find_tag(soup, 'section', attrs={'id': 'index-by-category'})
     total = 0
-    results = [('Статус', 'Количество')]
+    results = []
     for table in category.find_all('table'):
         for rows in table.find_all('tr')[1:]:
             a_href = find_tag(rows, 'a')
@@ -141,12 +140,11 @@ def pep(session):
 
     count_for_status['Total'] = total
 
-    # with open('results/pep.csv', 'w', encoding='utf-8') as file:
-    #     result = csv.writer(file)
-    #     result.writerow(['Статус', 'Количество'])
-    #     for status, count in count_for_status.items():
-    #         result.writerow([status, count])
-    return results
+    results_for_table = [['Статус', 'Количество']]
+    for status, count in count_for_status.items():
+        results_for_table.append([status, count])
+
+    return results_for_table
 
 
 MODE_TO_FUNCTION = {

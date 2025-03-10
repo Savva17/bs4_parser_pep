@@ -112,7 +112,7 @@ def pep(session):
     soup = BeautifulSoup(response.text, 'lxml')
     category = find_tag(soup, id='index-by-category')
     total = 0
-    results = []
+    results = [('Статус', 'Количество')]
     for table in category.find_all('table'):
         for rows in table.find_all('tr')[1:]:
             a_href = find_tag(rows, 'a')
@@ -141,11 +141,11 @@ def pep(session):
 
     count_for_status['Total'] = total
 
-    with open('results/pep.csv', 'w', encoding='utf-8') as file:
-        result = csv.writer(file)
-        result.writerow(['Статус', 'Количество'])
-        for status, count in count_for_status.items():
-            result.writerow([status, count])
+    # with open('results/pep.csv', 'w', encoding='utf-8') as file:
+    #     result = csv.writer(file)
+    #     result.writerow(['Статус', 'Количество'])
+    #     for status, count in count_for_status.items():
+    #         result.writerow([status, count])
     return results
 
 

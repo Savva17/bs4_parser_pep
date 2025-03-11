@@ -15,3 +15,5 @@ EXPECTED_STATUS = {
     'W': ('Withdrawn',),
     '': ('Draft', 'Active'),
 }
+MAXBYTES = 10 ** 6
+BACKUPCOUNT = 5

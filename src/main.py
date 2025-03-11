@@ -7,19 +7,25 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import BASE_DIR, MAIN_DOC_URL, PEP_DOC_URL, EXPECTED_STATUS
+from constants import BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PEP_DOC_URL
+from exceptions import ParserFindTagException
 from outputs import control_output
 from utils import find_tag, get_response
+
+
+def common_functional(session, url):
+    '''Функция для создания объекта BeautifulSoup.'''
+    response = get_response(session, url)
+    if response is None:
+        return
+    
+    return BeautifulSoup(response.text, 'lxml')
 
 
 def whats_new(session):
 
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
-    response = get_response(session, whats_new_url)
-    if response is None:
-        return
-
-    soup = BeautifulSoup(response.text, 'lxml')
+    soup = common_functional(session, whats_new_url)
     main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
     div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
     sections_by_python = div_with_ul.find_all(
@@ -49,11 +55,7 @@ def whats_new(session):
 
 def latest_versions(session):
 
-    response = get_response(session, MAIN_DOC_URL)
-    if response is None:
-        return
-
-    soup = BeautifulSoup(response.text, 'lxml')
+    soup = common_functional(session, MAIN_DOC_URL)
     sidebar = find_tag(soup, 'div', attrs={'class': 'menu-wrapper'})
     ul_tags = sidebar.find_all('ul')
     for ul in ul_tags:
@@ -61,7 +63,7 @@ def latest_versions(session):
             a_tags = ul.find_all('a')
             break
     else:
-        raise Exception('Не найден список c версиями Python')
+        raise ParserFindTagException('Не найден список c версиями Python')
 
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
     pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
@@ -82,11 +84,7 @@ def latest_versions(session):
 def download(session):
 
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
-    response = get_response(session, downloads_url)
-    if response is None:
-        return
-
-    soup = BeautifulSoup(response.text, 'lxml')
+    soup = common_functional(session, downloads_url)
     table = find_tag(soup, 'table', attrs={'class': 'docutils'})
     pdf_a4_tag = find_tag(table, 'a', {'href': re.compile(r'.+pdf-a4\.zip$')})
     href = pdf_a4_tag.get('href')
@@ -121,22 +119,9 @@ def pep_links(category):
 
 def pep(session):
 
-    response = get_response(session, PEP_DOC_URL)
-    if response is None:
-        return
-    soup = BeautifulSoup(response.text, 'lxml')
+    soup = common_functional(session, PEP_DOC_URL)
     category = find_tag(soup, 'section', attrs={'id': 'index-by-category'})
     results, total = pep_links(category)
-    # total = 0
-    # results = []
-    # for table in category.find_all('table'):
-    #     for rows in table.find_all('tr')[1:]:
-    #         a_href = find_tag(rows, 'a')
-    #         if a_href:
-    #             href = a_href.get('href')
-    #             full_url = urljoin(PEP_DOC_URL, href)
-    #             results.append(full_url)
-    #             total += 1
 
     count_for_status = {}
     for page in tqdm(results):
@@ -158,8 +143,7 @@ def pep(session):
     count_for_status['Total'] = total
 
     results_for_table = [['Статус', 'Количество']]
-    for status, count in count_for_status.items():
-        results_for_table.append([status, count])
+    results_for_table.extend(count_for_status.items())
 
     return results_for_table
 

@@ -18,7 +18,7 @@ def common_functional(session, url):
     response = get_response(session, url)
     if response is None:
         return
-    
+
     return BeautifulSoup(response.text, 'lxml')
 
 
